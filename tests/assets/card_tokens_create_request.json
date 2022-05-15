@@ -1,0 +1,13 @@
+{
+  "card_number": "4074090000000004",
+  "expiration_month": "11",
+  "expiration_year": "2025",
+  "security_code": "123",
+  "cardholder": {
+    "name": "APRO",
+    "identification": {
+      "number": "19119119100",
+      "type": "CPF"
+    }
+  }
+}

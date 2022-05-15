@@ -1,0 +1,38 @@
+{
+  "collector_id": 202809963,
+  "items": [
+    {
+      "title": "Dummy Item",
+      "description": "Multicolor Item",
+      "currency_id": "BRL",
+      "quantity": 1,
+      "unit_price": 10
+    }
+  ],
+  "payer": {
+    "phone": {},
+    "identification": {},
+    "address": {}
+  },
+  "back_urls": {},
+  "payment_methods": {
+    "excluded_payment_methods": [
+      {}
+    ],
+    "excluded_payment_types": [
+      {}
+    ]
+  },
+  "client_id": 6295877106812064,
+  "marketplace": "MP-MKT-6295877106812064",
+  "marketplace_fee": 0,
+  "shipments": {
+    "receiver_address": {}
+  },
+  "statement_descriptor": "MERCADOPAGO",
+  "date_created": "2018-02-02T19:22:23.535Z",
+  "id": "202809963-920c288b-4ebb-40be-966f-700250fa5370",
+  "init_point": "https://www.mercadopago.com/mla/checkout/start?pref_id=202809963-920c288b-4ebb-40be-966f-700250fa5370",
+  "sandbox_init_point": "https://sandbox.mercadopago.com/mla/checkout/pay?pref_id=202809963-920c288b-4ebb-40be-966f-700250fa5370",
+  "metadata": {}
+}

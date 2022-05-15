@@ -1,0 +1,24 @@
+{
+  "id": "dd5952d1d908a2d1cfdc29230b37f910",
+  "public_key": "bassimga",
+  "first_six_digits": "503175",
+  "expiration_month": 11,
+  "expiration_year": 2025,
+  "last_four_digits": "0604",
+  "cardholder": {
+    "identification": {
+      "number": "19911841891",
+      "type": "CPF"
+    },
+    "name": "Jerson"
+  },
+  "status": "active",
+  "date_created": "2022-05-14T05:35:54.682-04:00",
+  "date_last_updated": "2022-05-14T05:35:54.682-04:00",
+  "date_due": "2022-05-22T05:35:54.682-04:00",
+  "luhn_validation": true,
+  "live_mode": true,
+  "require_esc": false,
+  "card_number_length": 16,
+  "security_code_length": 3
+}
