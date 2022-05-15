@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_aux::prelude::*;
 
-use crate::common_types::{BackUrls, Item, PaymentMethods, PreferencePayerInformation, Shipments};
+use crate::common_types::{BackUrls, CheckoutProPayer, Item, PaymentMethods, Shipments};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CheckoutProPreferencesResponse {
@@ -10,7 +10,7 @@ pub struct CheckoutProPreferencesResponse {
     pub collector_id: i64,
 
     pub items: Vec<Item>,
-    pub payer: PreferencePayerInformation,
+    pub payer: CheckoutProPayer,
     pub back_urls: BackUrls,
     pub payment_methods: PaymentMethods,
     pub marketplace: String,
@@ -52,9 +52,8 @@ mod tests {
     fn t_deserialization() {
         let response = serde_json::from_slice::<CheckoutProPreferencesResponse>(include_bytes!(
             "../../tests/assets/checkout_preferences_response.json"
-        ))
-        .unwrap();
+        ));
 
-        eprintln!("date = {:#?}", response.date_created);
+        assert!(response.is_ok())
     }
 }

@@ -13,6 +13,14 @@ An open source, strongly-typed SDK for the MercadoPago API.
 The library is still under development and its public API is subject to change.
 Project is licensed under the permissive MIT license.
 
+# Installation
+
+Added the following into your Cargo.toml:
+
+```toml
+mercadopago_sdk_rust = "0.1"
+```
+
 # Usage
 
 The client is built using the

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::errors::ValidationError;
+use crate::helpers::option_stringify;
 use crate::payments::requests::DocumentType;
 use crate::SDKError;
 
@@ -12,7 +13,9 @@ use crate::SDKError;
 /// COP: Colombian peso.
 /// PEN: Peruvian sol.
 /// UYU: Uruguayan peso.
-#[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Debug, strum::IntoStaticStr, strum::AsRefStr)]
+#[derive(
+    Copy, Clone, Deserialize, Serialize, PartialEq, Debug, strum::IntoStaticStr, strum::AsRefStr,
+)]
 pub enum CurrencyId {
     ARS,
     BRL,
@@ -84,9 +87,17 @@ pub struct Item {
 }
 
 impl Item {
-    pub fn minimal_item(name: String, description: String, price: f64, quantity: i32) -> Result<Item, SDKError> {
+    pub fn minimal_item(
+        name: String,
+        description: String,
+        price: f64,
+        quantity: i32,
+    ) -> Result<Item, SDKError> {
         if quantity < 1 {
-            return Err(ValidationError::ItemError("You can't have zero of something.".to_string()).into());
+            return Err(ValidationError::ItemError(
+                "You can't have zero of something.".to_string(),
+            )
+            .into());
         }
 
         Ok(Self {
@@ -117,8 +128,9 @@ pub struct Address {
     pub street_number: Option<i64>,
 }
 
+/// A payer will ALWAYS have a `PersonalIdentification`, and an `email` since it's the bare minimum.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct PreferencePayerInformation {
+pub struct CheckoutProPayer {
     pub(crate) email: Option<String>,
     pub identification: PersonalIdentification,
 
@@ -128,19 +140,47 @@ pub struct PreferencePayerInformation {
     pub address: Option<Address>,
 }
 
-impl PreferencePayerInformation {
+impl CheckoutProPayer {
     pub fn validate(&self) -> bool {
-        if self.email.is_none() || self.identification.number.is_none() || self.identification.document_type.is_none() {
+        if self.email.is_none()
+            || self.identification.number.is_none()
+            || self.identification.document_type.is_none()
+        {
             return false;
         }
         true
     }
 
-    pub fn minimal_payer<II: Into<Option<i64>>>(
+    pub fn standard_payer<II>(
         email: String,
         document_type: DocumentType,
         document_number: II,
-    ) -> Self {
+    ) -> Self
+    where
+        II: Into<Option<i64>>,
+    {
+        Self {
+            email: Some(email),
+            identification: PersonalIdentification {
+                document_type: Some(document_type),
+                number: document_number.into(),
+            },
+
+            name: None,
+            surname: None,
+            phone: None,
+            address: None,
+        }
+    }
+
+    pub fn minimal_payer<II>(
+        email: String,
+        document_type: DocumentType,
+        document_number: II,
+    ) -> Self
+    where
+        II: Into<Option<i64>>,
+    {
         Self {
             email: Some(email),
             identification: PersonalIdentification {
@@ -163,9 +203,19 @@ pub struct PersonalIdentification {
     pub document_type: Option<DocumentType>,
     #[serde(
         default,
+        serialize_with = "option_stringify",
         deserialize_with = "serde_aux::field_attributes::deserialize_option_number_from_string"
     )]
     pub number: Option<i64>,
+}
+
+impl PersonalIdentification {
+    pub fn new(document_type: DocumentType, document_number: i64) -> Self {
+        Self {
+            document_type: Some(document_type),
+            number: Some(document_number),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -188,6 +238,7 @@ pub struct Card {
     pub date_due: time::OffsetDateTime,
 }
 
+/// Information of the Credit/Debit Card owner.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Cardholder {
     pub name: String,

@@ -10,9 +10,12 @@ pub struct CardTokenResponse {
     #[serde(flatten)]
     pub card: Card,
 
+    /// Public key that was used to create this token.
+    /// Only populated if `public_key` was passed to create a token first.
+    pub public_key: Option<String>,
+
     pub live_mode: bool,
     pub luhn_validation: bool,
-    pub public_key: String,
     pub require_esc: bool,
     pub status: String,
 }
@@ -25,8 +28,7 @@ mod tests {
     fn t_token_response() {
         let payload = serde_json::from_slice::<CardTokenResponse>(include_bytes!(
             "../../tests/assets/card_tokens_create_response.json"
-        ))
-        .unwrap();
-        println!("{:?}", payload);
+        ));
+        assert!(payload.is_ok());
     }
 }

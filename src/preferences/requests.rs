@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
-use crate::common_types::{BackUrls, Item, PaymentMethods, PreferencePayerInformation};
+use crate::common_types::{BackUrls, CheckoutProPayer, Item, PaymentMethods};
 
 /// Buyers will be redirected back to your site immediately after completing
 /// the purchase.
@@ -28,9 +28,10 @@ pub enum AutoReturn {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CheckoutProPreferences {
     pub(crate) items: Vec<Item>,
-    pub(crate) payer: PreferencePayerInformation,
+    pub(crate) payer: CheckoutProPayer,
 
-    /// Also known as Cust ID, or simply User ID. It its the ID of the seller's MercadoPago account.
+    /// Also known as Cust ID, or simply User ID. It its the ID of the seller's MercadoPago
+    /// account.
     pub(crate) collector_id: i64,
 
     /// If specified, your buyers will be redirected back to your site immediately after completing
@@ -39,8 +40,8 @@ pub struct CheckoutProPreferences {
     /// Possible values are:
     /// * approved: The redirection takes place only for approved payments.
     ///
-    /// * all: The redirection takes place only for approved payments, forward compatibility only if
-    ///   we change the default behavior
+    /// * all: The redirection takes place only for approved payments, forward compatibility only
+    ///   if we change the default behavior
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) auto_return: Option<String>,
 
@@ -93,6 +94,8 @@ impl Default for CheckoutProPreferences {
 }
 
 impl CheckoutProPreferences {
+    /// Creates a blank [`CheckoutProPreferences`].
+    /// You need to set at least a `Payer`, and one `Item`, otherwise it will fail to validate.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -105,7 +108,11 @@ impl CheckoutProPreferences {
     }
 
     /// Sets the preference to begin on `from_date` and expire at `end_date`.
-    pub fn set_limited_offer(mut self, from_date: OffsetDateTime, end_date: OffsetDateTime) -> Self {
+    pub fn set_limited_offer(
+        mut self,
+        from_date: OffsetDateTime,
+        end_date: OffsetDateTime,
+    ) -> Self {
         self.expires = Some(true);
         self.expiration_date_from = Some(from_date.to_string());
         self.expiration_date_to = Some(end_date.to_string());
@@ -113,13 +120,18 @@ impl CheckoutProPreferences {
         self
     }
 
-    pub fn set_payer(mut self, payer: PreferencePayerInformation) -> Self {
+    pub fn set_payer(mut self, payer: CheckoutProPayer) -> Self {
         self.payer = payer;
         self
     }
 
     /// Sets the [`BackUrls`].
-    pub fn set_backurls(mut self, success: Option<String>, pending: Option<String>, failure: Option<String>) -> Self {
+    pub fn set_backurls(
+        mut self,
+        success: Option<String>,
+        pending: Option<String>,
+        failure: Option<String>,
+    ) -> Self {
         self.back_urls = Some(BackUrls {
             success,
             failure,

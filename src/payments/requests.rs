@@ -156,8 +156,7 @@ mod tests {
     fn t_payload_serialization() {
         let payload = serde_json::from_slice::<CreatePaymentPayload>(include_bytes!(
             "../../tests/assets/create_payment_request.json"
-        ))
-        .unwrap();
-        eprintln!("payload = {:#?}", payload);
+        ));
+        assert!(payload.is_ok());
     }
 }

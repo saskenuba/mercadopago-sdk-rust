@@ -1,7 +1,19 @@
 //! An open source, strongly-typed SDK for the MercadoPago API.
 //!
+//! It will try to hold your hand and reduce the possibility of errors, providing the correct API
+//! surface.
+//!
+//! ### Note
+//!
 //! The library is still under development and its public API is subject to change.
-//! Project is licensed under the permissive MIT license.
+//!
+//! # Installation
+//!
+//! Added the following into your Cargo.toml:
+//!
+//! ```toml
+//! mercadopago_sdk_rust = "0.1"
+//! ```
 //!
 //! # Usage
 //!
@@ -23,37 +35,42 @@
 //!
 //!
 //! # Creating a CheckoutPro Preference
-//! ```rust
-//! use mercadopago_sdk_rust::common_types::{Item, PreferencePayerInformation};
+//! ```no_run
+//! use mercadopago_sdk_rust::common_types::{CheckoutProPayer, Item};
 //! use mercadopago_sdk_rust::payments::requests::DocumentType;
 //! use mercadopago_sdk_rust::preferences::requests::CheckoutProPreferences;
 //! use mercadopago_sdk_rust::MercadoPagoSDKBuilder;
 //!
-//! let mp_sdk = MercadoPagoSDKBuilder::with_token("MP_ACCESS_TOKEN");
+//! #[tokio::main]
+//! async fn async_main() {
+//!     let mp_sdk = MercadoPagoSDKBuilder::with_token("MP_ACCESS_TOKEN");
 //!
-//! let sample_item =
-//!     Item::minimal_item("Sample item".to_string(), "".to_string(), 15.00, 1).unwrap();
+//!     let sample_item =
+//!         Item::minimal_item("Sample item".to_string(), "".to_string(), 15.00, 1).unwrap();
 //!
-//! let preferences = CheckoutProPreferences::new()
-//!     .set_items(vec![sample_item])
-//!     .set_payer(PreferencePayerInformation::minimal_payer(
-//!         "fulano@beltrano.com.br".to_string(),
-//!         DocumentType::CPF,
-//!         41810524485,
-//!     ));
+//!     let preferences = CheckoutProPreferences::new()
+//!         .set_items(vec![sample_item])
+//!         .set_payer(CheckoutProPayer::minimal_payer(
+//!             "fulano@beltrano.com.br".to_string(),
+//!             DocumentType::CPF,
+//!             41810524485,
+//!         ));
 //!
-//! mp_sdk
-//!     .create_preferences_checkout_pro(preferences)
-//!     .expect("Failed to validate checkout preference. Something is wrong.")
-//!     .execute()
-//!     .await
-//!     .unwrap();
+//!     mp_sdk
+//!         .create_preferences_checkout_pro(preferences)
+//!         .expect("Failed to validate checkout preference. Something is wrong.")
+//!         .execute()
+//!         .await
+//!         .unwrap();
+//! }
 //! ```
-//!
 //!
 //! # Other Examples
 //!
 //! Check out the `tests` folder inside our repository to check for more examples.
+//!
+//! # License
+//! Project is licensed under the permissive MIT license.
 
 pub mod card_tokens;
 pub mod common_types;
@@ -65,6 +82,7 @@ pub mod webhooks;
 
 use std::marker::PhantomData;
 
+use futures::future::err;
 use futures::TryFutureExt;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
@@ -74,7 +92,9 @@ use oauth2::{
 use reqwest::{Client, Method, RequestBuilder};
 use serde::de::DeserializeOwned;
 
-use crate::errors::SDKError;
+use crate::card_tokens::requests::CardTokenOptions;
+use crate::card_tokens::responses::CardTokenResponse;
+use crate::errors::{ApiError, SDKError};
 use crate::payments::requests::CreatePaymentPayload;
 use crate::preferences::requests::CheckoutProPreferences;
 use crate::preferences::responses::CheckoutProPreferencesResponse;
@@ -152,19 +172,24 @@ impl<'a, RP> SDKRequest<'a, RP> {
             .await?;
         eprintln!("response = {}", response);
 
+        // matches errors due to wrong payloads etc
+        let error_jd = serde_json::from_str::<ApiError>(&*response);
+        if let Ok(err) = error_jd {
+            eprintln!("err = {:#?}", err);
+            return Err(SDKError::GenericError);
+        }
+
         let jd = &mut serde_json::Deserializer::from_str(&*response);
         let res: Result<RP, _> = serde_path_to_error::deserialize(jd);
 
-        let oi = match res {
-            Ok(a) => a,
+        match res {
+            Ok(deserialized_resp) => Ok(deserialized_resp),
             Err(wow) => {
                 println!("{:?}", wow.path());
                 eprintln!("Error = {:#?}", wow);
-                return Err(SDKError::GenericError);
+                Err(SDKError::GenericError)
             }
-        };
-
-        Ok(oi)
+        }
     }
 }
 
@@ -187,26 +212,31 @@ impl MercadoPagoSDK {
             http_client: &self.http_client,
             access_token: &self.access_token,
             request,
-            response_type: PhantomData::<CheckoutProPreferencesResponse>,
+            response_type: PhantomData::<_>,
         })
     }
+
     /// Used to create and save a credit/debit card token, instead of transacting raw sensitive
     /// data, such as card number.
     ///
     /// Create a token before issuing payments with cards.
     pub fn create_card_token(
         &self,
-    ) -> Result<SDKRequest<CheckoutProPreferencesResponse>, SDKError> {
-        let request = self
-            .http_client
-            .request(Method::POST, API_BASE_URL.to_string() + "/card_tokens")
-            .json(&None::<&str>);
+        opts: CardTokenOptions,
+    ) -> Result<SDKRequest<CardTokenResponse>, SDKError> {
+        let url = format!(
+            "{}/v1/card_tokens?public_key={}",
+            API_BASE_URL,
+            opts.public_key.as_deref().unwrap_or("")
+        );
+
+        let request = self.http_client.request(Method::POST, url).json(&opts);
 
         Ok(SDKRequest {
             http_client: &self.http_client,
             access_token: &self.access_token,
             request,
-            response_type: PhantomData::<CheckoutProPreferencesResponse>,
+            response_type: PhantomData::<_>,
         })
     }
 
