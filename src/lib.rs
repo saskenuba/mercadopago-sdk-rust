@@ -1,6 +1,60 @@
-extern crate core;
+//! An open source, strongly-typed SDK for the MercadoPago API.
+//!
+//! The library is still under development and its public API is subject to change.
+//! Project is licensed under the permissive MIT license.
+//!
+//! # Usage
+//!
+//! The client is built using the
+//! [`MercadoPagoSDKBuilder::with_token`](crate::MercadoPagoSDKBuilder) `with_token`
+//! method.
+//!
+//! ```rust
+//! # fn main() {
+//! use mercadopago_sdk_rust::{MercadoPagoSDK, MercadoPagoSDKBuilder};
+//!
+//! let mp_sdk: MercadoPagoSDK = MercadoPagoSDKBuilder::with_token("MP_ACCESS_TOKEN");
+//!
+//! # }
+//! ```
+//!
+//! Once the token is inserted, you can call methods on [`crate::MercadoPagoSDK`]
+//!
+//!
+//!
+//! # Creating a CheckoutPro Preference
+//! ```rust
+//! use mercadopago_sdk_rust::common_types::{Item, PreferencePayerInformation};
+//! use mercadopago_sdk_rust::payments::requests::DocumentType;
+//! use mercadopago_sdk_rust::preferences::requests::CheckoutProPreferences;
+//! use mercadopago_sdk_rust::MercadoPagoSDKBuilder;
+//!
+//! let mp_sdk = MercadoPagoSDKBuilder::with_token("MP_ACCESS_TOKEN");
+//!
+//! let sample_item =
+//!     Item::minimal_item("Sample item".to_string(), "".to_string(), 15.00, 1).unwrap();
+//!
+//! let preferences = CheckoutProPreferences::new()
+//!     .set_items(vec![sample_item])
+//!     .set_payer(PreferencePayerInformation::minimal_payer(
+//!         "fulano@beltrano.com.br".to_string(),
+//!         DocumentType::CPF,
+//!         41810524485,
+//!     ));
+//!
+//! mp_sdk
+//!     .create_preferences_checkout_pro(preferences)
+//!     .expect("Failed to validate checkout preference. Something is wrong.")
+//!     .execute()
+//!     .await
+//!     .unwrap();
+//! ```
+//!
+//!
+//! # Other Examples
+//!
+//! Check out the `tests` folder inside our repository to check for more examples.
 
-/// A open source SDK for the MercadoPago API.
 pub mod card_tokens;
 pub mod common_types;
 pub mod errors;
@@ -11,7 +65,7 @@ pub mod webhooks;
 
 use std::marker::PhantomData;
 
-use futures::{FutureExt, TryFutureExt};
+use futures::TryFutureExt;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{
@@ -25,9 +79,9 @@ use crate::payments::requests::CreatePaymentPayload;
 use crate::preferences::requests::CheckoutProPreferences;
 use crate::preferences::responses::CheckoutProPreferencesResponse;
 
-const CLIENT_ID: &str = "1673647513457968";
 const API_BASE_URL: &str = "https://api.mercadopago.com";
 
+///
 #[derive(Debug)]
 pub struct MercadoPagoSDKBuilder {}
 
@@ -57,6 +111,7 @@ impl MercadoPagoSDKBuilder {
         })
     }
 
+    /// Creates an [`MercadoPagoSDK`] ready to request the API.
     pub fn with_token<T: ToString>(client_access_token: T) -> MercadoPagoSDK {
         MercadoPagoSDK {
             http_client: Default::default(),
