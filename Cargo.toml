@@ -1,6 +1,6 @@
 [package]
 name = "mercadopago-sdk-rust"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Martin Mariano <contato@martinmariano.com>"]
 repository = "https://github.com/saskenuba/mercadopago-sdk-rust"
 edition = "2021"
