@@ -10,8 +10,12 @@
 
 An open source, strongly-typed SDK for the MercadoPago API.
 
+It will try to hold your hand and reduce the possibility of errors, providing the correct API
+surface.
+
+### Note
+
 The library is still under development and its public API is subject to change.
-Project is licensed under the permissive MIT license.
 
 # Installation
 
@@ -40,35 +44,40 @@ Once the token is inserted, you can call methods on [`crate::MercadoPagoSDK`]
 
 # Creating a CheckoutPro Preference
 ```rust
-use mercadopago_sdk_rust::common_types::{Item, PreferencePayerInformation};
+use mercadopago_sdk_rust::common_types::{CheckoutProPayer, Item};
 use mercadopago_sdk_rust::payments::requests::DocumentType;
 use mercadopago_sdk_rust::preferences::requests::CheckoutProPreferences;
 use mercadopago_sdk_rust::MercadoPagoSDKBuilder;
 
-let mp_sdk = MercadoPagoSDKBuilder::with_token("MP_ACCESS_TOKEN");
+#[tokio::main]
+async fn async_main() {
+    let mp_sdk = MercadoPagoSDKBuilder::with_token("MP_ACCESS_TOKEN");
 
-let sample_item =
-    Item::minimal_item("Sample item".to_string(), "".to_string(), 15.00, 1).unwrap();
+    let sample_item =
+        Item::minimal_item("Sample item".to_string(), "".to_string(), 15.00, 1).unwrap();
 
-let preferences = CheckoutProPreferences::new()
-    .set_items(vec![sample_item])
-    .set_payer(PreferencePayerInformation::minimal_payer(
-        "fulano@beltrano.com.br".to_string(),
-        DocumentType::CPF,
-        41810524485,
-    ));
+    let preferences = CheckoutProPreferences::new()
+        .set_items(vec![sample_item])
+        .set_payer(CheckoutProPayer::minimal_payer(
+            "fulano@beltrano.com.br".to_string(),
+            DocumentType::CPF,
+            41810524485,
+        ));
 
-mp_sdk
-    .create_preferences_checkout_pro(preferences)
-    .expect("Failed to validate checkout preference. Something is wrong.")
-    .execute()
-    .await
-    .unwrap();
+    mp_sdk
+        .create_preferences_checkout_pro(preferences)
+        .expect("Failed to validate checkout preference. Something is wrong.")
+        .execute()
+        .await
+        .unwrap();
+}
 ```
-
 
 # Other Examples
 
 Check out the `tests` folder inside our repository to check for more examples.
+
+# License
+Project is licensed under the permissive MIT license.
 
 <!-- cargo-rdme end -->
