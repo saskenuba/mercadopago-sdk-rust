@@ -165,12 +165,12 @@ impl<'a, RP> SDKRequest<'a, RP> {
             .execute(request)
             .and_then(|c| c.text())
             .await?;
-        eprintln!("response = {}", response);
+        log::trace!("response = {}", response);
 
         // matches errors due to wrong payloads etc
         let error_jd = serde_json::from_str::<ApiError>(&*response);
         if let Ok(err) = error_jd {
-            eprintln!("err = {:#?}", err);
+            log::error!("failed to deserialize api error: {:#?}", err);
             return Err(SDKError::GenericError);
         }
 
@@ -180,8 +180,7 @@ impl<'a, RP> SDKRequest<'a, RP> {
         match res {
             Ok(deserialized_resp) => Ok(deserialized_resp),
             Err(wow) => {
-                println!("{:?}", wow.path());
-                eprintln!("Error = {:#?}", wow);
+                log::error!("An error ocurred while deserializing value at {:?}: {:#?}", wow.path(), wow);
                 Err(SDKError::GenericError)
             }
         }
