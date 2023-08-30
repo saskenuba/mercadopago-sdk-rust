@@ -106,7 +106,7 @@ const API_BASE_URL: &str = "https://api.mercadopago.com";
 pub struct MercadoPagoSDKBuilder {}
 
 impl MercadoPagoSDKBuilder {
-    async fn authorize<T: ToString>(
+    pub async fn authorize<T: ToString>(
         client_id: T,
         client_secret: T,
     ) -> Result<MercadoPagoSDK, SDKError> {
