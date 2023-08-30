@@ -84,7 +84,7 @@ use futures::TryFutureExt;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{
-    AccessToken, AuthType, AuthUrl, ClientId, ClientSecret, Scope, TokenResponse, TokenUrl,
+    AccessToken, AuthType, AuthUrl, ClientId, ClientSecret, Scope, TokenResponse, TokenUrl, RefreshToken,
 };
 use reqwest::{Client, Method, RequestBuilder};
 use serde::de::DeserializeOwned;
@@ -132,6 +132,25 @@ impl MercadoPagoSDKBuilder {
             http_client: Default::default(),
             access_token: AccessToken::new(client_access_token.to_string()),
         }
+    }
+    pub async fn refresh_token(
+        client_id: impl ToString,
+        client_secret: impl ToString,
+        refresh_token: impl ToString
+    ) -> Result<String, SDKError> {
+        let client = BasicClient::new(
+            ClientId::new(client_id.to_string()),
+            Some(ClientSecret::new(client_secret.to_string())),
+            AuthUrl::new("https://auth.mercadopago.com/authorization".to_string()).unwrap(),
+            Some(TokenUrl::new("https://api.mercadopago.com/oauth/token".to_string()).unwrap()),
+        )
+        .set_auth_type(AuthType::BasicAuth);
+        let refresh_token = RefreshToken::new(refresh_token.to_string());
+        client.exchange_refresh_token(&refresh_token)
+            .request_async(async_http_client)
+            .map_err(|e| SDKError::CredentialsError(e.to_string()))
+            .map_ok(|res| res.access_token().secret().to_string())
+            .await
     }
 }
 
