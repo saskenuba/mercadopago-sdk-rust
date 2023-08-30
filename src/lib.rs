@@ -79,10 +79,7 @@ pub mod helpers;
 pub mod payments;
 pub mod preferences;
 pub mod webhooks;
-
 use std::marker::PhantomData;
-
-use futures::future::err;
 use futures::TryFutureExt;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
@@ -106,9 +103,9 @@ const API_BASE_URL: &str = "https://api.mercadopago.com";
 pub struct MercadoPagoSDKBuilder {}
 
 impl MercadoPagoSDKBuilder {
-    pub async fn authorize<T: ToString>(
-        client_id: T,
-        client_secret: T,
+    pub async fn authorize(
+        client_id: impl ToString,
+        client_secret: impl ToString,
     ) -> Result<MercadoPagoSDK, SDKError> {
         let client = BasicClient::new(
             ClientId::new(client_id.to_string()),
@@ -132,7 +129,7 @@ impl MercadoPagoSDKBuilder {
     }
 
     /// Creates an [`MercadoPagoSDK`] ready to request the API.
-    pub fn with_token<T: ToString>(client_access_token: T) -> MercadoPagoSDK {
+    pub fn with_token(client_access_token: impl ToString) -> MercadoPagoSDK {
         MercadoPagoSDK {
             http_client: Default::default(),
             access_token: AccessToken::new(client_access_token.to_string()),
