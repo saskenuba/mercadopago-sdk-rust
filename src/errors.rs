@@ -26,15 +26,15 @@ pub enum ValidationError {
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct ApiError {
-    message: String,
-    status: i32,
-    error: String,
-    cause: Option<Vec<ErrorCause>>,
+pub struct ApiError {
+    pub message: String,
+    pub status: i32,
+    pub error: String,
+    pub cause: Option<Vec<ErrorCause>>,
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct ErrorCause {
+pub struct ErrorCause {
     pub description: String,
     pub code: String,
 }

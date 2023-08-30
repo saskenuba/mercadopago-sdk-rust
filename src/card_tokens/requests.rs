@@ -42,16 +42,12 @@ impl<'a> CardTokenOptions<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
-    fn t_token_serialization() {
-        #[test]
-        fn t_token_response() {
-            let payload = serde_json::from_slice::<CardTokenOptions>(include_bytes!(
-                "../../tests/assets/card_tokens_create_request.json"
-            ))
-            .unwrap();
-            println!("{:?}", payload);
-        }
+    fn t_token_response_serialization() {
+        let payload = serde_json::from_slice::<CardTokenOptions>(include_bytes!(
+            "../../tests/assets/card_tokens_create_request.json"
+        ))
+        .unwrap();
+        println!("{:?}", payload);
     }
 }

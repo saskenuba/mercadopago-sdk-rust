@@ -79,15 +79,12 @@ pub mod helpers;
 pub mod payments;
 pub mod preferences;
 pub mod webhooks;
-
 use std::marker::PhantomData;
-
-use futures::future::err;
 use futures::TryFutureExt;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{
-    AccessToken, AuthType, AuthUrl, ClientId, ClientSecret, Scope, TokenResponse, TokenUrl,
+    AccessToken, AuthType, AuthUrl, ClientId, ClientSecret, Scope, TokenResponse, TokenUrl, RefreshToken,
 };
 use reqwest::{Client, Method, RequestBuilder};
 use serde::de::DeserializeOwned;
@@ -101,14 +98,12 @@ use crate::preferences::responses::CheckoutProPreferencesResponse;
 
 const API_BASE_URL: &str = "https://api.mercadopago.com";
 
-///
-#[derive(Debug)]
-pub struct MercadoPagoSDKBuilder {}
+pub enum MercadoPagoSDKBuilder {}
 
 impl MercadoPagoSDKBuilder {
-    async fn authorize<T: ToString>(
-        client_id: T,
-        client_secret: T,
+    pub async fn authorize(
+        client_id: impl ToString,
+        client_secret: impl ToString,
     ) -> Result<MercadoPagoSDK, SDKError> {
         let client = BasicClient::new(
             ClientId::new(client_id.to_string()),
@@ -122,8 +117,8 @@ impl MercadoPagoSDKBuilder {
             .exchange_client_credentials()
             .add_scope(Scope::new("offline_access".to_string()))
             .request_async(async_http_client)
-            .await
-            .unwrap();
+            .map_err(|e| SDKError::CredentialsError(e.to_string()))
+            .await?;
 
         Ok(MercadoPagoSDK {
             http_client: Default::default(),
@@ -132,11 +127,30 @@ impl MercadoPagoSDKBuilder {
     }
 
     /// Creates an [`MercadoPagoSDK`] ready to request the API.
-    pub fn with_token<T: ToString>(client_access_token: T) -> MercadoPagoSDK {
+    pub fn with_token(client_access_token: impl ToString) -> MercadoPagoSDK {
         MercadoPagoSDK {
             http_client: Default::default(),
             access_token: AccessToken::new(client_access_token.to_string()),
         }
+    }
+    pub async fn refresh_token(
+        client_id: impl ToString,
+        client_secret: impl ToString,
+        refresh_token: impl ToString
+    ) -> Result<String, SDKError> {
+        let client = BasicClient::new(
+            ClientId::new(client_id.to_string()),
+            Some(ClientSecret::new(client_secret.to_string())),
+            AuthUrl::new("https://auth.mercadopago.com/authorization".to_string()).unwrap(),
+            Some(TokenUrl::new("https://api.mercadopago.com/oauth/token".to_string()).unwrap()),
+        )
+        .set_auth_type(AuthType::BasicAuth);
+        let refresh_token = RefreshToken::new(refresh_token.to_string());
+        client.exchange_refresh_token(&refresh_token)
+            .request_async(async_http_client)
+            .map_err(|e| SDKError::CredentialsError(e.to_string()))
+            .map_ok(|res| res.access_token().secret().to_string())
+            .await
     }
 }
 
@@ -170,12 +184,12 @@ impl<'a, RP> SDKRequest<'a, RP> {
             .execute(request)
             .and_then(|c| c.text())
             .await?;
-        eprintln!("response = {}", response);
+        log::trace!("response = {}", response);
 
         // matches errors due to wrong payloads etc
         let error_jd = serde_json::from_str::<ApiError>(&*response);
         if let Ok(err) = error_jd {
-            eprintln!("err = {:#?}", err);
+            log::error!("failed to deserialize api error: {:#?}", err);
             return Err(SDKError::GenericError);
         }
 
@@ -185,8 +199,7 @@ impl<'a, RP> SDKRequest<'a, RP> {
         match res {
             Ok(deserialized_resp) => Ok(deserialized_resp),
             Err(wow) => {
-                println!("{:?}", wow.path());
-                eprintln!("Error = {:#?}", wow);
+                log::error!("An error ocurred while deserializing value at {:?}: {:#?}", wow.path(), wow);
                 Err(SDKError::GenericError)
             }
         }
