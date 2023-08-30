@@ -98,9 +98,7 @@ use crate::preferences::responses::CheckoutProPreferencesResponse;
 
 const API_BASE_URL: &str = "https://api.mercadopago.com";
 
-///
-#[derive(Debug)]
-pub struct MercadoPagoSDKBuilder {}
+pub enum MercadoPagoSDKBuilder {}
 
 impl MercadoPagoSDKBuilder {
     pub async fn authorize(
