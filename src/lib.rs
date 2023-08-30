@@ -119,8 +119,8 @@ impl MercadoPagoSDKBuilder {
             .exchange_client_credentials()
             .add_scope(Scope::new("offline_access".to_string()))
             .request_async(async_http_client)
-            .await
-            .unwrap();
+            .map_err(|e| SDKError::CredentialsError(e.to_string()))
+            .await?;
 
         Ok(MercadoPagoSDK {
             http_client: Default::default(),
